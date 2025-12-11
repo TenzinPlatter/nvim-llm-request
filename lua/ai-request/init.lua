@@ -34,7 +34,7 @@ function M.setup(opts)
   M.config = vim.tbl_deep_extend("force", M.config, opts or {})
 
   -- Validate provider
-  local valid_providers = { anthropic = true, openai = true, local = true }
+  local valid_providers = { anthropic = true, openai = true, ["local"] = true }
   if not valid_providers[M.config.provider] then
     vim.notify(
       string.format("Invalid provider '%s'. Must be: anthropic, openai, or local", M.config.provider),
