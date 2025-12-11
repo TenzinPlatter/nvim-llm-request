@@ -41,4 +41,28 @@ describe("virtual text display", function()
 
     d:clear()
   end)
+
+  it("should display spinner inline at end of non-empty line", function()
+    local buf = vim.api.nvim_create_buf(false, true)
+    vim.api.nvim_buf_set_lines(buf, 0, -1, false, {"line 1", "existing content", "line 3"})
+
+    -- Create display on non-empty line (line 2)
+    local d = display.new(buf, 2, { show_spinner = true }, "", false)
+    d:show("Generating...")
+
+    -- Check extmark uses virt_text with eol positioning
+    local marks = vim.api.nvim_buf_get_extmarks(buf, d.namespace, 0, -1, { details = true })
+    assert.is_true(#marks > 0)
+
+    local mark_details = marks[1][4]
+    assert.is_not_nil(mark_details.virt_text)
+    assert.is_nil(mark_details.virt_lines)
+    assert.equals("eol", mark_details.virt_text_pos)
+
+    -- Verify line count unchanged
+    local line_count = vim.api.nvim_buf_line_count(buf)
+    assert.equals(3, line_count)
+
+    d:clear()
+  end)
 end)
