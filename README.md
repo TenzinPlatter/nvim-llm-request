@@ -30,19 +30,29 @@ Async LLM-powered code completion for Neovim with virtual text feedback.
   build = 'pip3 install -r python/requirements.txt',
   config = function()
     require('ai-request').setup({
-      -- Defaults shown, all optional
+      -- Provider configuration
+      provider = 'anthropic',  -- 'anthropic', 'openai', or 'local'
+      model = nil,  -- Auto-selected if nil (claude-sonnet-4.5, gpt-4, etc.)
+      base_url = nil,  -- Only needed for local models
+
+      -- Behavior
+      timeout = 30,  -- seconds
+      max_tool_calls = 3,
+      max_concurrent_requests = 3,
+
+      -- Display
       display = {
         show_thinking = true,
         show_spinner = true,
       },
+
+      -- Context extraction
       context = {
         lines_before = 100,
         lines_after = 20,
         include_treesitter = true,
         include_lsp = false,
       },
-      max_concurrent_requests = 3,
-      timeout_ms = 30000,
     })
   end
 }
@@ -59,39 +69,47 @@ Async LLM-powered code completion for Neovim with virtual text feedback.
   build = 'pip3 install -r python/requirements.txt',
   config = function()
     require('ai-request').setup({
-      -- configuration here
+      provider = 'anthropic',
+      -- other options...
     })
   end
 }
 ```
 
+**Local model example (Ollama):**
+```lua
+require('ai-request').setup({
+  provider = 'local',
+  model = 'deepseek-coder:6.7b',
+  base_url = 'http://localhost:11434/v1',
+})
+```
+
 ## Configuration
 
-### Environment Variables (Required)
+### API Keys (Required)
+
+Set the API key for your chosen provider:
 
 ```bash
-# Choose provider
-export AI_REQUEST_PROVIDER=anthropic  # or: openai, local
-
-# API Keys
+# Anthropic Claude
 export ANTHROPIC_API_KEY=sk-ant-...
+
+# OpenAI
 export OPENAI_API_KEY=sk-...
 
-# Model selection
-export AI_REQUEST_MODEL=claude-sonnet-4.5  # or: gpt-4, deepseek-coder, etc.
-
-# Local model settings (if provider=local)
-export AI_REQUEST_LOCAL_URL=http://localhost:11434/v1  # Ollama
-export AI_REQUEST_LOCAL_MODEL=deepseek-coder:33b
+# Local models (optional, some don't need keys)
+export AI_REQUEST_LOCAL_API_KEY=your-key
 ```
 
-### Optional Environment Variables
+### Configuration Priority
 
-```bash
-export AI_REQUEST_TIMEOUT=60              # Request timeout in seconds
-export AI_REQUEST_MAX_CONCURRENT=5        # Max parallel requests
-export AI_REQUEST_MAX_TOOL_CALLS=3        # Max tool calling rounds
-```
+Settings are resolved in this order:
+1. **Lua `setup()` config** - Non-sensitive settings (provider, model, timeouts, etc.)
+2. **Environment variables** - Fallback for any setting, required for API keys
+3. **Defaults** - Sensible defaults if nothing specified
+
+**Best practice:** Configure provider/model in `setup()`, keep API keys in environment variables.
 
 ## Usage
 

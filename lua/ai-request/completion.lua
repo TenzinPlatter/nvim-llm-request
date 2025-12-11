@@ -63,6 +63,16 @@ function M.request(prompt, opts)
   -- Store timer for cleanup
   active_requests[request_id].timeout_timer = timeout_timer
 
+  -- Build config for Python backend
+  local provider_config = {
+    provider = opts.provider,
+    model = opts.model,
+    base_url = opts.base_url,
+    api_key = opts.api_key,
+    timeout = opts.timeout,
+    max_tool_calls = opts.max_tool_calls,
+  }
+
   -- Send request to Python
   local c = ensure_client()
   c:send({
@@ -70,6 +80,7 @@ function M.request(prompt, opts)
     request_id = request_id,
     context = formatted_context,
     prompt = prompt,
+    config = provider_config,
   }, function(response)
     M._handle_response(request_id, response, opts)
   end)

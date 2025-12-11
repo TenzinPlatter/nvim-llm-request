@@ -54,10 +54,8 @@ def process_request(request: Dict[str, Any]) -> Iterator[Dict[str, Any]]:
 def handle_complete_request(request: Dict[str, Any]) -> Iterator[Dict[str, Any]]:
     """Handle initial completion request."""
     # Get config (from request or environment)
-    if 'config' in request:
-        config_dict = request['config']
-        from config import Config as ConfigClass
-        config = ConfigClass(**config_dict)
+    if 'config' in request and request['config']:
+        config = Config.from_dict(request['config'])
     else:
         config = Config.from_env()
 

@@ -56,5 +56,5 @@ def test_unknown_provider_raises_error(monkeypatch):
     """Test that unknown provider raises ValueError."""
     monkeypatch.setenv('AI_REQUEST_PROVIDER', 'unknown')
 
-    with pytest.raises(ValueError, match="Unknown provider"):
+    with pytest.raises(ValueError, match="Invalid provider"):
         Config.from_env()
