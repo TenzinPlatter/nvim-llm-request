@@ -16,17 +16,16 @@ Async LLM-powered code completion for Neovim with virtual text feedback.
 ### Prerequisites
 - Neovim 0.10+
 - Python 3.8+
-- [plenary.nvim](https://github.com/nvim-lua/plenary.nvim)
-- (Optional) [nvim-treesitter](https://github.com/nvim-treesitter/nvim-treesitter) for better context
+- (Optional) [nvim-treesitter](https://github.com/nvim-treesitter/nvim-treesitter) for enhanced context extraction
 
 ### Install with lazy.nvim
 
+**Standard installation:**
 ```lua
 {
   'your-username/ai-request.nvim',
   dependencies = {
-    'nvim-lua/plenary.nvim',
-    'nvim-treesitter/nvim-treesitter',  -- optional
+    'nvim-treesitter/nvim-treesitter',  -- optional but recommended
   },
   build = 'pip3 install -r python/requirements.txt',
   config = function()
@@ -44,6 +43,23 @@ Async LLM-powered code completion for Neovim with virtual text feedback.
       },
       max_concurrent_requests = 3,
       timeout_ms = 30000,
+    })
+  end
+}
+```
+
+**Lazy-loading on command (faster startup):**
+```lua
+{
+  'your-username/ai-request.nvim',
+  cmd = 'AIRequest',  -- Load only when :AIRequest is called
+  dependencies = {
+    'nvim-treesitter/nvim-treesitter',  -- optional
+  },
+  build = 'pip3 install -r python/requirements.txt',
+  config = function()
+    require('ai-request').setup({
+      -- configuration here
     })
   end
 }
