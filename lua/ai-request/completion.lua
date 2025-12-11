@@ -158,6 +158,22 @@ function M._handle_response(request_id, response, opts)
   end
 end
 
+--- Strip markdown code block markers from completion
+--- @param text string Completion text that may contain code blocks
+--- @return string Cleaned text without code block markers
+function M._strip_code_blocks(text)
+  -- Remove opening code block (```lang or just ```)
+  text = text:gsub("^%s*```%w*\n", "")
+
+  -- Remove closing code block
+  text = text:gsub("\n```%s*$", "")
+
+  -- Also handle if closing is at the very end without newline
+  text = text:gsub("```%s*$", "")
+
+  return text
+end
+
 --- Insert completion at position
 --- @param bufnr number Buffer number
 --- @param line number Line number (1-indexed)
@@ -165,6 +181,9 @@ end
 --- @param indent string Leading whitespace from original line
 --- @param is_empty_line boolean Whether the original line was empty/whitespace only
 function M._insert_completion(bufnr, line, completion, indent, is_empty_line)
+  -- Strip markdown code block markers
+  completion = M._strip_code_blocks(completion)
+
   local lines = vim.split(completion, "\n")
 
   -- Add indentation to all lines
