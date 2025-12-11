@@ -184,7 +184,15 @@ function M._insert_completion(bufnr, line, completion, indent, is_empty_line)
   -- Strip markdown code block markers
   completion = M._strip_code_blocks(completion)
 
+  -- Trim leading/trailing whitespace from entire completion
+  completion = completion:match("^%s*(.-)%s*$") or completion
+
   local lines = vim.split(completion, "\n")
+
+  -- Remove trailing empty lines (caused by trailing newlines in completion)
+  while #lines > 0 and lines[#lines] == "" do
+    table.remove(lines)
+  end
 
   -- Add indentation to all lines
   for i, l in ipairs(lines) do
