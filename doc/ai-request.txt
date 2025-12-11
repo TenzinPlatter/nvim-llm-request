@@ -1,0 +1,58 @@
+*ai-request.txt*  Async LLM code completion for Neovim
+
+CONTENTS                                                  *ai-request-contents*
+
+1. Introduction ........................... |ai-request-introduction|
+2. Commands ............................... |ai-request-commands|
+3. Configuration .......................... |ai-request-configuration|
+4. Functions .............................. |ai-request-functions|
+
+==============================================================================
+INTRODUCTION                                          *ai-request-introduction*
+
+ai-request.nvim provides async LLM-powered code completions with virtual text
+feedback. Supports OpenAI, Anthropic Claude, and local models.
+
+==============================================================================
+COMMANDS                                                  *ai-request-commands*
+
+:AIRequest [prompt]                                                *:AIRequest*
+    Request a code completion at cursor position.
+
+    Without arguments: Auto-completion based on context
+    With arguments: Prompted completion using the provided instruction
+
+    Examples:
+        :AIRequest
+        :AIRequest make this async
+        :AIRequest add error handling
+
+==============================================================================
+CONFIGURATION                                        *ai-request-configuration*
+
+Setup function:                                            *ai-request.setup()*
+>
+    require('ai-request').setup({
+      display = {
+        show_thinking = true,
+        show_spinner = true,
+      },
+      context = {
+        lines_before = 100,
+        lines_after = 20,
+        include_treesitter = true,
+        include_lsp = false,
+      },
+      max_concurrent_requests = 3,
+      timeout_ms = 30000,
+    })
+<
+
+Environment variables (required):
+    AI_REQUEST_PROVIDER       Provider: anthropic, openai, local
+    ANTHROPIC_API_KEY        Anthropic API key
+    OPENAI_API_KEY           OpenAI API key
+    AI_REQUEST_MODEL         Model name override
+
+==============================================================================
+vim:tw=78:ts=8:ft=help:norl:
