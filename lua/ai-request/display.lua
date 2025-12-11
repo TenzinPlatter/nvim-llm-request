@@ -9,10 +9,12 @@ local SPINNERS = {
 --- @param line number Line number (1-indexed)
 --- @param opts table Options { show_spinner, show_thinking }
 --- @param indent string Leading whitespace for indentation
+--- @param is_empty_line boolean Whether the line is empty/whitespace-only
 --- @return table Display instance
-function M.new(bufnr, line, opts, indent)
+function M.new(bufnr, line, opts, indent, is_empty_line)
   opts = opts or {}
   indent = indent or ""
+  is_empty_line = is_empty_line or false
 
   local self = {
     bufnr = bufnr,
@@ -23,6 +25,7 @@ function M.new(bufnr, line, opts, indent)
     spinner_timer = nil,
     opts = opts,
     indent = indent,
+    is_empty_line = is_empty_line,
   }
 
   setmetatable(self, { __index = M })
@@ -32,39 +35,44 @@ end
 --- Show virtual text with optional spinner
 --- @param text string Text to display
 function M:show(text)
-  local virt_lines = {}
-
-  -- Build the display text with indentation
+  -- Build the display text
+  -- Add spacing prefix, then spinner, then text
   local display_text
   if self.opts.show_spinner then
     local spinner = SPINNERS[self.spinner_index]
-    display_text = self.indent .. spinner .. " " .. text
+    display_text = " " .. spinner .. " " .. text
   else
-    display_text = self.indent .. text
+    display_text = " " .. text
   end
 
-  table.insert(virt_lines, {{display_text, "Comment"}})
-
-  -- Add empty line for spacing
-  table.insert(virt_lines, {{"", ""}})
-
-  -- Create or update extmark
+  -- Get the line number to place the extmark on
+  -- If we already have an extmark, use its current position (it tracks automatically)
+  -- Otherwise use the initial line
+  local target_line
   if self.extmark_id then
-    -- Get current position (extmark may have moved due to buffer edits)
     local mark = vim.api.nvim_buf_get_extmark_by_id(self.bufnr, self.namespace, self.extmark_id, {})
     if mark and #mark > 0 then
-      -- Update at current position
-      vim.api.nvim_buf_set_extmark(self.bufnr, self.namespace, mark[1], mark[2], {
-        id = self.extmark_id,
-        virt_lines = virt_lines,
-        virt_lines_above = false,
-      })
+      target_line = mark[1]
+    else
+      -- Extmark was deleted somehow, recreate at original line
+      self.extmark_id = nil
+      target_line = self.line - 1
     end
   else
-    -- Create new extmark at original line
-    self.extmark_id = vim.api.nvim_buf_set_extmark(self.bufnr, self.namespace, self.line - 1, 0, {
-      virt_lines = virt_lines,
-      virt_lines_above = false,
+    target_line = self.line - 1  -- Convert from 1-indexed to 0-indexed
+  end
+
+  -- Create or update extmark with inline virt_text at end of line
+  if self.extmark_id then
+    vim.api.nvim_buf_set_extmark(self.bufnr, self.namespace, target_line, 0, {
+      id = self.extmark_id,
+      virt_text = {{display_text, "Comment"}},
+      virt_text_pos = "eol",  -- Position at end of line
+    })
+  else
+    self.extmark_id = vim.api.nvim_buf_set_extmark(self.bufnr, self.namespace, target_line, 0, {
+      virt_text = {{display_text, "Comment"}},
+      virt_text_pos = "eol",  -- Position at end of line
     })
   end
 
