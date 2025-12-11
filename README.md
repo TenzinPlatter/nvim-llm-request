@@ -23,7 +23,7 @@ Async LLM-powered code completion for Neovim with virtual text feedback.
 **Standard installation:**
 ```lua
 {
-  'your-username/ai-request.nvim',
+  'TenzinPlatter/ai-request.nvim',
   dependencies = {
     'nvim-treesitter/nvim-treesitter',  -- optional but recommended
   },
@@ -51,7 +51,7 @@ Async LLM-powered code completion for Neovim with virtual text feedback.
 **Lazy-loading on command (faster startup):**
 ```lua
 {
-  'your-username/ai-request.nvim',
+  'TenzinPlatter/ai-request.nvim',
   cmd = 'AIRequest',  -- Load only when :AIRequest is called
   dependencies = {
     'nvim-treesitter/nvim-treesitter',  -- optional
