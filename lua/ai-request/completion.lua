@@ -42,7 +42,7 @@ function M.request(prompt, opts)
   local ctx = context.extract(bufnr, line, opts.context)
   local formatted_context = context.format(ctx)
 
-  -- Create display (no need for indent or is_empty_line anymore)
+  -- Create display
   local disp = display.new(bufnr, line, opts.display)
   disp:show("Generating...")
 
@@ -106,6 +106,7 @@ function M._handle_response(request_id, response, opts)
   if response.type == "thinking" then
     -- Just accumulate, don't update display
     -- Spinner continues showing "Generating..."
+    -- TODO: show thinking
 
   elseif response.type == "completion" then
     -- Accumulate completion parts, spinner continues
