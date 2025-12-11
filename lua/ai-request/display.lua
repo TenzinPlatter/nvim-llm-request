@@ -50,12 +50,18 @@ function M:show(text)
 
   -- Create or update extmark
   if self.extmark_id then
-    vim.api.nvim_buf_set_extmark(self.bufnr, self.namespace, self.line - 1, 0, {
-      id = self.extmark_id,
-      virt_lines = virt_lines,
-      virt_lines_above = false,
-    })
+    -- Get current position (extmark may have moved due to buffer edits)
+    local mark = vim.api.nvim_buf_get_extmark_by_id(self.bufnr, self.namespace, self.extmark_id, {})
+    if mark and #mark > 0 then
+      -- Update at current position
+      vim.api.nvim_buf_set_extmark(self.bufnr, self.namespace, mark[1], mark[2], {
+        id = self.extmark_id,
+        virt_lines = virt_lines,
+        virt_lines_above = false,
+      })
+    end
   else
+    -- Create new extmark at original line
     self.extmark_id = vim.api.nvim_buf_set_extmark(self.bufnr, self.namespace, self.line - 1, 0, {
       virt_lines = virt_lines,
       virt_lines_above = false,
