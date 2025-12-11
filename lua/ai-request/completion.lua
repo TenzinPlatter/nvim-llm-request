@@ -190,19 +190,32 @@ function M._insert_completion(bufnr, line, completion, indent, is_empty_line)
     table.remove(lines)
   end
 
-  -- Add indentation to all lines
+  -- Remove leading empty lines too
+  while #lines > 0 and lines[1] == "" do
+    table.remove(lines, 1)
+  end
+
+  -- Add indentation to all non-empty lines
   for i, l in ipairs(lines) do
     if l ~= "" then
       lines[i] = indent .. l
     end
   end
 
+  -- Filter out any remaining empty lines to prevent blank lines
+  local filtered_lines = {}
+  for _, l in ipairs(lines) do
+    if l ~= "" then
+      table.insert(filtered_lines, l)
+    end
+  end
+
   if is_empty_line then
     -- Replace the current line instead of inserting after it
-    vim.api.nvim_buf_set_lines(bufnr, line - 1, line, false, lines)
+    vim.api.nvim_buf_set_lines(bufnr, line - 1, line, false, filtered_lines)
   else
     -- Insert after the current line (original behavior)
-    vim.api.nvim_buf_set_lines(bufnr, line, line, false, lines)
+    vim.api.nvim_buf_set_lines(bufnr, line, line, false, filtered_lines)
   end
 end
 
