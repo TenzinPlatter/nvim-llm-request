@@ -33,7 +33,7 @@ function M.request(prompt, opts)
   local cursor = vim.api.nvim_win_get_cursor(0)
   local line = cursor[1]
 
-  -- Get current line content and check if empty/whitespace only
+  -- Get current line content for indentation (still needed for completion insertion)
   local current_line = vim.api.nvim_buf_get_lines(bufnr, line - 1, line, false)[1] or ""
   local indent = current_line:match("^%s*") or ""
   local is_empty_line = current_line:match("^%s*$") ~= nil
@@ -53,8 +53,8 @@ function M.request(prompt, opts)
     bufnr = bufnr,
     line = line,
     completion_parts = {},
-    indent = indent,
-    is_empty_line = is_empty_line,
+    indent = indent,  -- Still needed for M._insert_completion
+    is_empty_line = is_empty_line,  -- Still needed for M._insert_completion
   }
 
   -- Set timeout
