@@ -44,7 +44,7 @@ function M.request(prompt, opts)
 
   -- Create display with indentation
   local disp = display.new(bufnr, line, opts.display, indent)
-  disp:show("Starting request...")
+  disp:show("Generating...")
 
   -- Track this request with unique ID
   local request_id = tostring(os.time() * 1000 + math.random(1000))
@@ -104,20 +104,16 @@ function M._handle_response(request_id, response, opts)
   end
 
   if response.type == "thinking" then
-    if opts.display.show_thinking then
-      req.display:update("Thinking: " .. response.content)
-    end
+    -- Just accumulate, don't update display
+    -- Spinner continues showing "Generating..."
 
   elseif response.type == "completion" then
-    req.display:update("Generating...")
+    -- Accumulate completion parts, spinner continues
     table.insert(req.completion_parts, response.content)
 
   elseif response.type == "tool_call" then
-    local func_name = response.args.function_name or "unknown"
-    req.display:update("Fetching " .. func_name .. "...")
-
-    -- Find implementation
-    local implementation = M._find_implementation(req.bufnr, func_name)
+    -- Find implementation without changing display
+    local implementation = M._find_implementation(req.bufnr, response.args.function_name or "unknown")
 
     -- Send back to Python with tool_call_id
     local c = ensure_client()
