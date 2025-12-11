@@ -81,8 +81,20 @@ function M._handle_response(request_id, response, opts)
     table.insert(req.completion_parts, response.content)
 
   elseif response.type == "tool_call" then
-    -- TODO: Handle tool calls
-    req.display:update("Requesting " .. response.name .. "...")
+    req.display:update("Fetching " .. response.args.function_name .. "...")
+
+    -- Find implementation
+    local implementation = M._find_implementation(req.bufnr, response.args.function_name)
+
+    -- Send back to Python
+    local c = ensure_client()
+    c:send({
+      type = "tool_response",
+      request_id = request_id,
+      content = implementation or "Function not found",
+    }, function(resp)
+      M._handle_response(request_id, resp, opts)
+    end)
 
   elseif response.type == "done" then
     -- Insert completion
@@ -107,6 +119,28 @@ end
 function M._insert_completion(bufnr, line, completion)
   local lines = vim.split(completion, "\n")
   vim.api.nvim_buf_set_lines(bufnr, line, line, false, lines)
+end
+
+--- Find function implementation using treesitter
+--- @param bufnr number Buffer number
+--- @param function_name string Function name to find
+--- @return string|nil Implementation code
+function M._find_implementation(bufnr, function_name)
+  -- Try current buffer first
+  local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
+  local content = table.concat(lines, "\n")
+
+  -- Simple pattern match (could use treesitter for better accuracy)
+  local pattern = "function%s+" .. function_name .. "%s*%(.-%).-\nend"
+  local impl = content:match(pattern)
+
+  if impl then
+    return impl
+  end
+
+  -- TODO: Search other files using treesitter/LSP
+
+  return nil
 end
 
 return M
