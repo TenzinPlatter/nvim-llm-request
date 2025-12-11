@@ -1,12 +1,12 @@
 import pytest
 from unittest.mock import Mock, patch
+from providers.openai_client import OpenAIClient
 
 def test_stream_completion():
     """Test streaming completion from OpenAI."""
     with patch('providers.openai_client.OpenAI') as MockOpenAI:
-        # Import after patching
-        from providers.openai_client import OpenAIClient
-
+        client = OpenAIClient(api_key="test-key", model="gpt-4")
+        
         # Mock streaming response
         mock_chunks = [
             Mock(choices=[Mock(delta=Mock(content='def ', tool_calls=None))]),
@@ -15,7 +15,6 @@ def test_stream_completion():
         ]
         MockOpenAI.return_value.chat.completions.create.return_value = mock_chunks
 
-        client = OpenAIClient(api_key="test-key", model="gpt-4")
         chunks = list(client.stream_completion(
             context="# Write a function",
             prompt=None,
