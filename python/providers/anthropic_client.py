@@ -1,4 +1,5 @@
 """Anthropic API client with streaming support."""
+import json
 from typing import Iterator, Dict, Any, List, Optional
 from anthropic import Anthropic
 
@@ -32,6 +33,10 @@ class AnthropicClient:
 
         messages = [{"role": "user", "content": user_message}]
 
+        # Track current tool use block
+        current_tool = None
+        tool_input_json = ""
+
         # Stream the response
         with self.client.messages.stream(
             model=self.model,
@@ -53,11 +58,35 @@ class AnthropicClient:
                             'type': 'thinking',
                             'content': event.delta.thinking
                         }
+                    # Accumulate tool input JSON
+                    elif hasattr(event.delta, 'type') and event.delta.type == 'input_json_delta':
+                        if hasattr(event.delta, 'partial_json'):
+                            tool_input_json += event.delta.partial_json
 
-                # Handle tool calls
+                # Handle tool call start
                 elif event.type == 'content_block_start':
                     if hasattr(event.content_block, 'type') and event.content_block.type == 'tool_use':
-                        # Will be completed in subsequent deltas
-                        pass
+                        current_tool = {
+                            'id': event.content_block.id,
+                            'name': event.content_block.name,
+                        }
+                        tool_input_json = ""
+
+                # Handle tool call completion
+                elif event.type == 'content_block_stop':
+                    if current_tool:
+                        try:
+                            args = json.loads(tool_input_json) if tool_input_json else {}
+                        except json.JSONDecodeError:
+                            args = {}
+
+                        yield {
+                            'type': 'tool_call',
+                            'id': current_tool['id'],
+                            'name': current_tool['name'],
+                            'args': args,
+                        }
+                        current_tool = None
+                        tool_input_json = ""
 
         yield {'type': 'done'}

@@ -1,4 +1,5 @@
 """OpenAI API client with streaming support."""
+import json
 from typing import Iterator, Dict, Any, List, Optional
 from openai import OpenAI
 
@@ -21,7 +22,7 @@ class OpenAIClient:
 
         Yields:
             {"type": "completion", "content": "..."}
-            {"type": "tool_call", "name": "...", "args": {...}}
+            {"type": "tool_call", "id": "...", "name": "...", "args": {...}}
             {"type": "done"}
         """
         # Build messages
@@ -33,6 +34,9 @@ class OpenAIClient:
             {"role": "system", "content": "You are a code completion assistant."},
             {"role": "user", "content": user_message}
         ]
+
+        # Track accumulated tool calls by index
+        tool_calls = {}
 
         # Stream the response
         stream = self.client.chat.completions.create(
@@ -47,6 +51,7 @@ class OpenAIClient:
                 continue
 
             delta = chunk.choices[0].delta
+            finish_reason = chunk.choices[0].finish_reason
 
             # Handle text content
             if delta.content:
@@ -55,14 +60,40 @@ class OpenAIClient:
                     'content': delta.content
                 }
 
-            # Handle tool calls
+            # Accumulate tool calls
             if delta.tool_calls:
-                for tool_call in delta.tool_calls:
-                    if tool_call.function:
-                        yield {
-                            'type': 'tool_call',
-                            'name': tool_call.function.name,
-                            'args': tool_call.function.arguments,
+                for tool_call_chunk in delta.tool_calls:
+                    idx = tool_call_chunk.index
+
+                    if idx not in tool_calls:
+                        tool_calls[idx] = {
+                            'id': tool_call_chunk.id or '',
+                            'name': '',
+                            'arguments': '',
                         }
+
+                    if tool_call_chunk.id:
+                        tool_calls[idx]['id'] = tool_call_chunk.id
+
+                    if tool_call_chunk.function:
+                        if tool_call_chunk.function.name:
+                            tool_calls[idx]['name'] = tool_call_chunk.function.name
+                        if tool_call_chunk.function.arguments:
+                            tool_calls[idx]['arguments'] += tool_call_chunk.function.arguments
+
+            # Yield completed tool calls when stream finishes
+            if finish_reason == 'tool_calls':
+                for tool_call in tool_calls.values():
+                    try:
+                        args = json.loads(tool_call['arguments']) if tool_call['arguments'] else {}
+                    except json.JSONDecodeError:
+                        args = {}
+
+                    yield {
+                        'type': 'tool_call',
+                        'id': tool_call['id'],
+                        'name': tool_call['name'],
+                        'args': args,
+                    }
 
         yield {'type': 'done'}
