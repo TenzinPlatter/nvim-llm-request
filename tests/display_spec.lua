@@ -87,4 +87,78 @@ describe("virtual text display", function()
 
     d:clear()
   end)
+
+  -- Comprehensive verification test for Task 7
+  describe("comprehensive implementation verification", function()
+    it("should meet all inline display requirements", function()
+      local buf = vim.api.nvim_create_buf(false, true)
+
+      -- Test 1: Spinner on empty/whitespace-only line
+      vim.api.nvim_buf_set_lines(buf, 0, -1, false, {"", "    ", "  \t  "})
+      local d1 = display.new(buf, 2, { show_spinner = true })
+      d1:show("Test 1")
+
+      local marks = vim.api.nvim_buf_get_extmarks(buf, d1.namespace, 0, -1, { details = true })
+      assert.equals(1, #marks, "Should have exactly one extmark")
+      assert.equals("eol", marks[1][4].virt_text_pos, "Should position at eol")
+      assert.is_not_nil(marks[1][4].virt_text, "Should use virt_text")
+      assert.is_nil(marks[1][4].virt_lines, "Should NOT use virt_lines")
+      assert.equals(3, vim.api.nvim_buf_line_count(buf), "Line count should not change")
+      d1:clear()
+
+      -- Test 2: Spinner on non-empty line with content
+      vim.api.nvim_buf_set_lines(buf, 0, -1, false, {"local x = 1", "function foo()", "end"})
+      local d2 = display.new(buf, 2, { show_spinner = true })
+      d2:show("Test 2")
+
+      marks = vim.api.nvim_buf_get_extmarks(buf, d2.namespace, 0, -1, { details = true })
+      assert.equals(1, #marks, "Should have exactly one extmark")
+      assert.equals("eol", marks[1][4].virt_text_pos, "Should position at eol on non-empty line")
+      assert.equals(3, vim.api.nvim_buf_line_count(buf), "Line count should not change")
+
+      -- Verify virt_text contains spinner and message
+      local virt_text = marks[1][4].virt_text[1][1]
+      assert.is_true(virt_text:match("Test 2") ~= nil, "Should contain message text")
+      d2:clear()
+
+      -- Test 3: Position tracking during multiple edits
+      vim.api.nvim_buf_set_lines(buf, 0, -1, false, {"line 1", "line 2", "line 3", "line 4"})
+      local d3 = display.new(buf, 3, { show_spinner = true })
+      d3:show("Test 3")
+
+      -- Initial position check (line 3, 0-indexed = 2)
+      marks = vim.api.nvim_buf_get_extmarks(buf, d3.namespace, 0, -1, { details = true })
+      assert.equals(2, marks[1][2], "Should start at line 2 (0-indexed)")
+
+      -- Insert line above
+      vim.api.nvim_buf_set_lines(buf, 0, 0, false, {"new line"})
+      marks = vim.api.nvim_buf_get_extmarks(buf, d3.namespace, 0, -1, { details = true })
+      assert.equals(3, marks[1][2], "Should track to line 3 after insert above")
+
+      -- Insert line below
+      vim.api.nvim_buf_set_lines(buf, 5, 5, false, {"another line"})
+      marks = vim.api.nvim_buf_get_extmarks(buf, d3.namespace, 0, -1, { details = true })
+      assert.equals(3, marks[1][2], "Should stay at line 3 after insert below")
+
+      -- Verify it maintains eol positioning throughout edits
+      assert.equals("eol", marks[1][4].virt_text_pos, "Should remain at eol position after edits")
+      assert.is_not_nil(marks[1][4].virt_text, "Should still use virt_text")
+      assert.is_nil(marks[1][4].virt_lines, "Should NOT use virt_lines after edits")
+
+      d3:clear()
+
+      -- Test 4: No spinner mode (show_spinner = false)
+      vim.api.nvim_buf_set_lines(buf, 0, -1, false, {"test"})
+      local d4 = display.new(buf, 1, { show_spinner = false })
+      d4:show("No spinner")
+
+      marks = vim.api.nvim_buf_get_extmarks(buf, d4.namespace, 0, -1, { details = true })
+      assert.equals(1, #marks, "Should still create extmark without spinner")
+      assert.equals("eol", marks[1][4].virt_text_pos, "Should still use eol positioning")
+
+      local virt_text_no_spinner = marks[1][4].virt_text[1][1]
+      assert.is_true(virt_text_no_spinner:match("No spinner") ~= nil, "Should show text without spinner")
+      d4:clear()
+    end)
+  end)
 end)
