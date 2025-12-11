@@ -27,6 +27,7 @@ function M.new()
       on_exit = function(_, code)
         if code ~= 0 then
           vim.notify("AI Request Python exited with code " .. code, vim.log.levels.ERROR)
+          self.job_id = nil  -- Mark as dead
         end
       end,
       stdout_buffered = false,
@@ -66,6 +67,14 @@ end
 --- @param request table Request object
 --- @param callback function Callback for responses
 function M:send(request, callback)
+  -- Restart if dead
+  if not self.job_id or self.job_id <= 0 then
+    vim.notify("Restarting Python backend...", vim.log.levels.INFO)
+    -- Re-initialize
+    local new_client = M.new()
+    self.job_id = new_client.job_id
+  end
+
   local id = self.next_id
   self.next_id = self.next_id + 1
 

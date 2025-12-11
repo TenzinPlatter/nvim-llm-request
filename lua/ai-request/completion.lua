@@ -50,6 +50,19 @@ function M.request(prompt, opts)
     completion_parts = {},
   }
 
+  -- Set timeout
+  local timeout_timer = vim.loop.new_timer()
+  timeout_timer:start(opts.timeout_ms, 0, vim.schedule_wrap(function()
+    if active_requests[request_id] then
+      vim.notify("AI Request timed out", vim.log.levels.ERROR)
+      active_requests[request_id].display:clear()
+      active_requests[request_id] = nil
+    end
+  end))
+
+  -- Store timer for cleanup
+  active_requests[request_id].timeout_timer = timeout_timer
+
   -- Send request to Python
   local c = ensure_client()
   c:send({
@@ -97,6 +110,12 @@ function M._handle_response(request_id, response, opts)
     end)
 
   elseif response.type == "done" then
+    -- Clean up timer
+    if req.timeout_timer then
+      req.timeout_timer:stop()
+      req.timeout_timer:close()
+    end
+
     -- Insert completion
     local completion = table.concat(req.completion_parts, "")
     if completion ~= "" then
@@ -106,6 +125,12 @@ function M._handle_response(request_id, response, opts)
     active_requests[request_id] = nil
 
   elseif response.type == "error" then
+    -- Clean up timer
+    if req.timeout_timer then
+      req.timeout_timer:stop()
+      req.timeout_timer:close()
+    end
+
     vim.notify("AI Request failed: " .. response.message, vim.log.levels.ERROR)
     req.display:clear()
     active_requests[request_id] = nil
