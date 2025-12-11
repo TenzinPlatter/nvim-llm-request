@@ -195,18 +195,12 @@ function M._insert_completion(bufnr, line, completion, indent, is_empty_line)
     table.remove(lines, 1)
   end
 
-  -- Add indentation to all non-empty lines
-  for i, l in ipairs(lines) do
-    if not l:match("^%s*$") then
-      lines[i] = indent .. l
-    end
-  end
-
-  -- Filter out any empty or whitespace-only lines to prevent blank lines
+  -- Add indentation and filter out whitespace-only lines in one pass
   local filtered_lines = {}
   for _, l in ipairs(lines) do
-    if not l:match("^%s*$") then
-      table.insert(filtered_lines, l)
+    -- Check if line has any non-whitespace content
+    if l:match("%S") then
+      table.insert(filtered_lines, indent .. l)
     end
   end
 
