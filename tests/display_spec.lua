@@ -65,4 +65,26 @@ describe("virtual text display", function()
 
     d:clear()
   end)
+
+  it("should maintain spinner position when buffer is edited", function()
+    local buf = vim.api.nvim_create_buf(false, true)
+    vim.api.nvim_buf_set_lines(buf, 0, -1, false, {"line 1", "   ", "line 3"})
+
+    -- Create display on line 2
+    local d = display.new(buf, 2, { show_spinner = true }, "   ", true)
+    d:show("Generating...")
+
+    -- Insert a line before the spinner line
+    vim.api.nvim_buf_set_lines(buf, 0, 0, false, {"new line 1"})
+
+    -- Spinner should now be on line 3 (shifted down)
+    local marks = vim.api.nvim_buf_get_extmarks(buf, d.namespace, 0, -1, { details = true })
+    assert.is_true(#marks > 0)
+
+    -- Extmark should have moved to line 2 (0-indexed, so line 3 in 1-indexed)
+    local mark_line = marks[1][2]
+    assert.equals(2, mark_line, "Extmark should track to new position")
+
+    d:clear()
+  end)
 end)
