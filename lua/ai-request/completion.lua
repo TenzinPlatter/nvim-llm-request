@@ -42,8 +42,8 @@ function M.request(prompt, opts)
   local ctx = context.extract(bufnr, line, opts.context)
   local formatted_context = context.format(ctx)
 
-  -- Create display with indentation
-  local disp = display.new(bufnr, line, opts.display, indent)
+  -- Create display (no need for indent or is_empty_line anymore)
+  local disp = display.new(bufnr, line, opts.display)
   disp:show("Generating...")
 
   -- Track this request with unique ID

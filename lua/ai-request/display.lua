@@ -8,13 +8,9 @@ local SPINNERS = {
 --- @param bufnr number Buffer number
 --- @param line number Line number (1-indexed)
 --- @param opts table Options { show_spinner, show_thinking }
---- @param indent string Leading whitespace for indentation
---- @param is_empty_line boolean Whether the line is empty/whitespace-only
 --- @return table Display instance
-function M.new(bufnr, line, opts, indent, is_empty_line)
+function M.new(bufnr, line, opts)
   opts = opts or {}
-  indent = indent or ""
-  is_empty_line = is_empty_line or false
 
   local self = {
     bufnr = bufnr,
@@ -24,8 +20,6 @@ function M.new(bufnr, line, opts, indent, is_empty_line)
     spinner_index = 1,
     spinner_timer = nil,
     opts = opts,
-    indent = indent,
-    is_empty_line = is_empty_line,
   }
 
   setmetatable(self, { __index = M })

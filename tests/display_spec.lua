@@ -22,7 +22,7 @@ describe("virtual text display", function()
     vim.api.nvim_buf_set_lines(buf, 0, -1, false, {"line 1", "   ", "line 3"})
 
     -- Create display on whitespace-only line (line 2)
-    local d = display.new(buf, 2, { show_spinner = true }, "   ", true)
+    local d = display.new(buf, 2, { show_spinner = true })
     d:show("Generating...")
 
     -- Check extmark exists and uses virt_text with eol positioning
@@ -47,7 +47,7 @@ describe("virtual text display", function()
     vim.api.nvim_buf_set_lines(buf, 0, -1, false, {"line 1", "existing content", "line 3"})
 
     -- Create display on non-empty line (line 2)
-    local d = display.new(buf, 2, { show_spinner = true }, "", false)
+    local d = display.new(buf, 2, { show_spinner = true })
     d:show("Generating...")
 
     -- Check extmark uses virt_text with eol positioning
@@ -71,7 +71,7 @@ describe("virtual text display", function()
     vim.api.nvim_buf_set_lines(buf, 0, -1, false, {"line 1", "   ", "line 3"})
 
     -- Create display on line 2
-    local d = display.new(buf, 2, { show_spinner = true }, "   ", true)
+    local d = display.new(buf, 2, { show_spinner = true })
     d:show("Generating...")
 
     -- Insert a line before the spinner line
