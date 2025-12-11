@@ -8,9 +8,11 @@ local SPINNERS = {
 --- @param bufnr number Buffer number
 --- @param line number Line number (1-indexed)
 --- @param opts table Options { show_spinner, show_thinking }
+--- @param indent string Leading whitespace for indentation
 --- @return table Display instance
-function M.new(bufnr, line, opts)
+function M.new(bufnr, line, opts, indent)
   opts = opts or {}
+  indent = indent or ""
 
   local self = {
     bufnr = bufnr,
@@ -20,6 +22,7 @@ function M.new(bufnr, line, opts)
     spinner_index = 1,
     spinner_timer = nil,
     opts = opts,
+    indent = indent,
   }
 
   setmetatable(self, { __index = M })
@@ -31,12 +34,16 @@ end
 function M:show(text)
   local virt_lines = {}
 
+  -- Build the display text with indentation
+  local display_text
   if self.opts.show_spinner then
     local spinner = SPINNERS[self.spinner_index]
-    table.insert(virt_lines, {{spinner .. " " .. text, "Comment"}})
+    display_text = self.indent .. spinner .. " " .. text
   else
-    table.insert(virt_lines, {{text, "Comment"}})
+    display_text = self.indent .. text
   end
+
+  table.insert(virt_lines, {{display_text, "Comment"}})
 
   -- Add empty line for spacing
   table.insert(virt_lines, {{"", ""}})

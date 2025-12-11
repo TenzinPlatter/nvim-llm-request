@@ -33,12 +33,17 @@ function M.request(prompt, opts)
   local cursor = vim.api.nvim_win_get_cursor(0)
   local line = cursor[1]
 
+  -- Get current line content and check if empty/whitespace only
+  local current_line = vim.api.nvim_buf_get_lines(bufnr, line - 1, line, false)[1] or ""
+  local indent = current_line:match("^%s*") or ""
+  local is_empty_line = current_line:match("^%s*$") ~= nil
+
   -- Extract context
   local ctx = context.extract(bufnr, line, opts.context)
   local formatted_context = context.format(ctx)
 
-  -- Create display
-  local disp = display.new(bufnr, line, opts.display)
+  -- Create display with indentation
+  local disp = display.new(bufnr, line, opts.display, indent)
   disp:show("Starting request...")
 
   -- Track this request with unique ID
@@ -48,6 +53,8 @@ function M.request(prompt, opts)
     bufnr = bufnr,
     line = line,
     completion_parts = {},
+    indent = indent,
+    is_empty_line = is_empty_line,
   }
 
   -- Set timeout
@@ -133,7 +140,7 @@ function M._handle_response(request_id, response, opts)
     -- Insert completion
     local completion = table.concat(req.completion_parts, "")
     if completion ~= "" then
-      M._insert_completion(req.bufnr, req.line, completion)
+      M._insert_completion(req.bufnr, req.line, completion, req.indent, req.is_empty_line)
     end
     req.display:clear()
     active_requests[request_id] = nil
@@ -153,11 +160,27 @@ end
 
 --- Insert completion at position
 --- @param bufnr number Buffer number
---- @param line number Line number
+--- @param line number Line number (1-indexed)
 --- @param completion string Text to insert
-function M._insert_completion(bufnr, line, completion)
+--- @param indent string Leading whitespace from original line
+--- @param is_empty_line boolean Whether the original line was empty/whitespace only
+function M._insert_completion(bufnr, line, completion, indent, is_empty_line)
   local lines = vim.split(completion, "\n")
-  vim.api.nvim_buf_set_lines(bufnr, line, line, false, lines)
+
+  -- Add indentation to all lines
+  for i, l in ipairs(lines) do
+    if l ~= "" then
+      lines[i] = indent .. l
+    end
+  end
+
+  if is_empty_line then
+    -- Replace the current line instead of inserting after it
+    vim.api.nvim_buf_set_lines(bufnr, line - 1, line, false, lines)
+  else
+    -- Insert after the current line (original behavior)
+    vim.api.nvim_buf_set_lines(bufnr, line, line, false, lines)
+  end
 end
 
 --- Find function implementation using treesitter
