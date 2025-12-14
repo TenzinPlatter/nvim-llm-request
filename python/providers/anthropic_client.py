@@ -2,6 +2,7 @@
 import json
 from typing import Iterator, Dict, Any, List, Optional
 from anthropic import Anthropic
+from config import SYSTEM_PROMPT
 
 
 class AnthropicClient:
@@ -33,18 +34,6 @@ class AnthropicClient:
 
         messages = [{"role": "user", "content": user_message}]
 
-        # System instructions
-        system_prompt = """You are a precise code completion assistant.
-
-CRITICAL RULES:
-1. Only generate NEW code that should be inserted at the <cursor> position
-2. DO NOT repeat any code that appears before or after the cursor
-3. DO NOT include explanations, comments about what you're doing, or markdown
-4. Generate only the exact code to insert - nothing more, nothing less
-5. Match the indentation and style of the surrounding code
-
-The code before and after <cursor> is provided for context only - do not regenerate it."""
-
         # Track current tool use block
         current_tool = None
         tool_input_json = ""
@@ -54,7 +43,7 @@ The code before and after <cursor> is provided for context only - do not regener
             model=self.model,
             max_tokens=4096,
             messages=messages,
-            system=system_prompt,
+            system=SYSTEM_PROMPT,
             tools=tools if tools else None,
         ) as stream:
             for event in stream:

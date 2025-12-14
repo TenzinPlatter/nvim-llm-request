@@ -2,6 +2,7 @@
 import json
 from typing import Iterator, Dict, Any, List, Optional
 from openai import OpenAI
+from config import SYSTEM_PROMPT
 
 
 class OpenAIClient:
@@ -30,20 +31,8 @@ class OpenAIClient:
         if prompt:
             user_message += f"\n\n{prompt}"
 
-        # System instructions
-        system_prompt = """You are a precise code completion assistant.
-
-CRITICAL RULES:
-1. Only generate NEW code that should be inserted at the <cursor> position
-2. DO NOT repeat any code that appears before or after the cursor
-3. DO NOT include explanations, comments about what you're doing, or markdown
-4. Generate only the exact code to insert - nothing more, nothing less
-5. Match the indentation and style of the surrounding code
-
-The code before and after <cursor> is provided for context only - do not regenerate it."""
-
         messages = [
-            {"role": "system", "content": system_prompt},
+            {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": user_message}
         ]
 

@@ -5,23 +5,10 @@ AI Request backend - handles LLM API calls via stdio JSON protocol.
 import sys
 import json
 from typing import Iterator, Dict, Any, Optional
-from config import Config
+from config import Config, SYSTEM_PROMPT
 from providers.anthropic_client import AnthropicClient
 from providers.openai_client import OpenAIClient
 from tools import get_tool_definitions, convert_tools_for_anthropic
-
-
-# System prompt for code completion (used in tool call continuations)
-SYSTEM_PROMPT = """You are a precise code completion assistant.
-
-CRITICAL RULES:
-1. Only generate NEW code that should be inserted at the <cursor> position
-2. DO NOT repeat any code that appears before or after the cursor
-3. DO NOT include explanations, comments about what you're doing, or markdown
-4. Generate only the exact code to insert - nothing more, nothing less
-5. Match the indentation and style of the surrounding code
-
-The code before and after <cursor> is provided for context only - do not regenerate it."""
 
 # Global state for tracking conversations
 conversations: Dict[str, Dict[str, Any]] = {}
